@@ -62,17 +62,16 @@ public class SkipList<T> {
     return (level < ZSKIPLIST_MAXLEVEL) ? level : ZSKIPLIST_MAXLEVEL;
   }
 
-  /*
+  /**
    * 创建一个成员为 obj ，分值为 score 的新节点，
    * 并将这个新节点插入到跳跃表 zsl 中。
-   *
    * 函数的返回值为新节点。
-   *
    * T_wrost = O(N^2), T_avg = O(N log N)
-   */
+   **/
   public SkipListNode<T> zslInsert(double score, T val) {
+
     SkipListNode<T>[] update = new SkipListNode[ZSKIPLIST_MAXLEVEL];
-    SkipListNode<T> x ;
+    SkipListNode<T> x;
     int[] rank = new int[ZSKIPLIST_MAXLEVEL];
     int i, level;
 
@@ -86,7 +85,7 @@ public class SkipList<T> {
       // 各个层的 rank 值一层层累积
       // 最终 rank[0] 的值加一就是新节点的前置节点的排位
       // rank[0] 会在后面成为计算 span 值和 rank 值的基础
-      rank[i] = i == (this.level-1) ? 0 : rank[i+1];
+      rank[i] = (i == (this.level-1) ? 0 : rank[i+1]);
 
       // 沿着前进指针遍历跳跃表
       // T_wrost = O(N^2), T_avg = O(N log N)
@@ -95,7 +94,7 @@ public class SkipList<T> {
       // 比对分值
       (x.getLevel()[i].forward.getScore() == score &&
               // 比对成员， T = O(N)
-              compareStringObjects(x.getLevel()[i].forward.getVal(),val) < 0))) {
+              compareObjects(x.getLevel()[i].forward.getVal(),val) < 0))) {
 
         // 记录沿途跨越了多少个节点
         rank[i] += x.getLevel()[i].span;
@@ -180,8 +179,11 @@ public class SkipList<T> {
     return x;
   }
 
-  private int compareStringObjects(T val, T val1) {
-    return 0;
+  private int compareObjects(T val, T val1) {
+    if(val instanceof Comparable && val1 instanceof Comparable) {
+      return ((Comparable) val1).compareTo(val1);
+    }
+    return val.toString().compareTo(val1.toString());
   }
 
 }
