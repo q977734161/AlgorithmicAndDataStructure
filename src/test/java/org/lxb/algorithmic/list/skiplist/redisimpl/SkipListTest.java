@@ -21,7 +21,16 @@ public class SkipListTest {
     for (int i = 0; i < SkipList.ZSKIPLIST_MAXLEVEL; i++) {
       System.out.println(levels[i]);
     }
+  }
 
+
+  @Test
+  public void testInsert(){
+    SkipList<String> skipList = new SkipList<>();
+    for (int i = 0; i < 1000; i++) {
+      skipList.zslInsert(i,""+i);
+    }
+    System.out.println(skipList);
   }
 
 }

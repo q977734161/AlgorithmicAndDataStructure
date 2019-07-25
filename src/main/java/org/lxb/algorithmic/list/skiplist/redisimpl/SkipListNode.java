@@ -18,6 +18,13 @@ public class SkipListNode<E> {
     skipListLevels =new SkipListLevel[level];
     this.val = val;
     this.score = score;
+    initSkipListLevel(skipListLevels);
+  }
+
+  private void initSkipListLevel(SkipListLevel<E>[] skipListLevels) {
+    for (int i = 0; i < skipListLevels.length; i++) {
+      skipListLevels[i] = new SkipListLevel<>();
+    }
   }
 
   public E getVal() {
@@ -58,6 +65,10 @@ public class SkipListNode<E> {
      * 跨度
      */
     int span = 0;
+
+    public SkipListLevel() {
+
+    }
 
     public SkipListNode<T> getForward() {
       return forward;

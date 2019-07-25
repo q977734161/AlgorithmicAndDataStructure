@@ -53,9 +53,7 @@ public class SkipList<T> {
    */
   protected int zslRandomLevel() {
     int level = 1;
-
-    Random random = new Random();
-    while ((random.nextInt() & 0xFFFF) < (ZSKIPLIST_P * 0xFFFF)) {
+    while (Math.random() < ZSKIPLIST_P ) {
       level += 1;
     }
 
@@ -70,8 +68,11 @@ public class SkipList<T> {
    **/
   public SkipListNode<T> zslInsert(double score, T val) {
 
+    //记录每层要插入节点的位置
     SkipListNode<T>[] update = new SkipListNode[ZSKIPLIST_MAXLEVEL];
     SkipListNode<T> x;
+
+    //记录每层跨越了多少个节点
     int[] rank = new int[ZSKIPLIST_MAXLEVEL];
     int i, level;
 
@@ -80,7 +81,7 @@ public class SkipList<T> {
     x = this.header;
     for (i = this.level-1; i >= 0; i--) {
 
-      // 如果 i 不是 zsl->level-1 层
+      // 如果 i 不是 level-1 层
       // 那么 i 层的起始 rank 值为 i+1 层的 rank 值
       // 各个层的 rank 值一层层累积
       // 最终 rank[0] 的值加一就是新节点的前置节点的排位
@@ -89,12 +90,13 @@ public class SkipList<T> {
 
       // 沿着前进指针遍历跳跃表
       // T_wrost = O(N^2), T_avg = O(N log N)
+      // x.getLevel()[i].forward != null 判断是下一个元素是否存在
+      // x.getLevel()[i].forward.getScore() < score 比对分值
+      // （x.getLevel()[i].forward.getScore() == score && compareObjects(x.getLevel()[i].forward.getVal(),val) < 0)比对成员， T = O(N)
       while (x.getLevel()[i].forward != null &&
               (x.getLevel()[i].forward.getScore() < score ||
-      // 比对分值
-      (x.getLevel()[i].forward.getScore() == score &&
-              // 比对成员， T = O(N)
-              compareObjects(x.getLevel()[i].forward.getVal(),val) < 0))) {
+                      (x.getLevel()[i].forward.getScore() == score &&
+                              compareObjects(x.getLevel()[i].forward.getVal(),val) < 0))) {
 
         // 记录沿途跨越了多少个节点
         rank[i] += x.getLevel()[i].span;
@@ -179,11 +181,118 @@ public class SkipList<T> {
     return x;
   }
 
+  /**
+   * 内部删除函数
+   * @param x
+   * @param update
+   */
+  public void zslDeleteNode(SkipListNode<T> x,SkipListNode<T>[] update) {
+
+    //更新所有和被删除节点 x 有关的节点指针，删除他们之间的关系
+    for (int i = 0;  i< this.level; i++) {
+      if(update[i].getLevel()[i].getForward() == x) {
+        update[i].getLevel()[i].span = x.getLevel()[i].span - 1;
+        update[i].getLevel()[i].setForward(x.getLevel()[i].forward);
+      } else {
+        update[i].getLevel()[i].span -= 1;
+      }
+    }
+
+    // 更新被删除节点 x 的前进和后退指针
+    if(x.getLevel()[0].forward != null) {
+      x.getLevel()[0].forward.setBackward(x.getBackward());
+    } else {
+      this.tail = x.getBackward();
+    }
+
+    // 更新跳跃表最大层数（只在被删除节点是跳跃表中最高的节点时才执行）
+    // T = O(1)
+    while(this.level > 1 && this.header.getLevel()[this.level-1].forward == null) {
+      this.level--;
+    }
+
+    // 跳跃表节点计数器减一
+    this.length--;
+
+  }
+
+  /**
+   * 删除节点
+   * @param score
+   * @param val
+   * @return 0 没有发现，1 删除成功
+   */
+  public int delete(double score,T val) {
+    SkipListNode<T>[] update = new SkipListNode[ZSKIPLIST_MAXLEVEL];
+    SkipListNode<T> x;
+
+    // 遍历跳跃表，查找目标节点，并记录所有沿途节点
+    // T_wrost = O(N^2), T_avg = O(N log N)
+    x = this.header;
+    for (int i = this.level-1; i >= 0; i--) {
+
+      // 遍历跳跃表的复杂度为 T_wrost = O(N), T_avg = O(log N)
+      while (x.getLevel()[i].forward != null &&
+              (x.getLevel()[i].forward.getScore() < score ||
+                      // 比对分值
+                      (x.getLevel()[i].forward.getScore() == score &&
+                              // 比对对象，T = O(N)
+                              compareObjects(x.getLevel()[i].forward.getVal(), val) < 0))) {
+
+        // 沿着前进指针移动
+        x = x.getLevel()[i].forward;
+
+        // 记录沿途节点
+        update[i] = x;
+      }
+    }
+
+    /* We may have multiple elements with the same score, what we need
+     * is to find the element with both the right score and object.
+     *
+     * 检查找到的元素 x ，只有在它的分值和对象都相同时，才将它删除。
+     */
+    x = x.getLevel()[0].forward;
+    if (x != null && score == x.getScore() && compareObjects(x.getVal(),val) == 0) {
+      // T = O(1)
+      zslDeleteNode(x, update);
+      // T = O(1)
+      zslFreeNode(x);
+      return 1;
+    } else {
+      return 0; /* not found */
+    }
+  }
+
+
+  /**
+   * 比较两个对象的值
+   * @param val
+   * @param val1
+   * @return
+   */
   private int compareObjects(T val, T val1) {
+
+    if(val == val1) {
+      return 0;
+    }
+
     if(val instanceof Comparable && val1 instanceof Comparable) {
       return ((Comparable) val1).compareTo(val1);
     }
+
     return val.toString().compareTo(val1.toString());
+  }
+
+  /**
+   * 释放节点
+   * @param x
+   */
+  private void zslFreeNode(SkipListNode<T> x) {
+    x.setBackward(null);
+    for (int i = 0; i < x.getLevel().length; i++) {
+      x.getLevel()[i] = null;
+    }
   }
 
 }
