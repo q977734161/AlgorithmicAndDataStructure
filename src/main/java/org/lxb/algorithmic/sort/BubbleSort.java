@@ -1,5 +1,21 @@
 package org.lxb.algorithmic.sort;
 
+/**
+ * Bubble sort is a simple sorting algorithm that works by repeatedly stepping
+ * through the list to be sorted, comparing each pair of adjacent items and
+ * swapping them if they are in the wrong order. The pass through the list is
+ * repeated until no swaps are needed, which indicates that the list is sorted.
+ * <p>
+ * Family: Exchanging.<br>
+ * Space: In-place.<br>
+ * Stable: True.<br>
+ * <p>
+ * Average case = O(n^2)<br>
+ * Worst case = O(n^2)<br>
+ * Best case = O(n)<br>
+ * <p>
+ * @see <a href="https://en.wikipedia.org/wiki/Bubble_sort">Bubble Sort (Wikipedia)</a>
+ */
 public class BubbleSort<T extends Comparable<T>> {
 
     public <T extends Comparable<T>> T[] sort(T[] unsortData) {
