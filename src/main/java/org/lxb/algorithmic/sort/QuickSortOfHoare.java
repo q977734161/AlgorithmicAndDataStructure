@@ -16,7 +16,7 @@ import java.util.Random;
  * <p>
  * @see <a href="https://en.wikipedia.org/wiki/Quick_sort">Quicksort (Wikipedia)</a>
  */
-public class QuckSort<T extends Comparable<T>> {
+public class QuickSortOfHoare<T extends Comparable<T>> {
 
     private static Random RANDOM = new Random();
 
